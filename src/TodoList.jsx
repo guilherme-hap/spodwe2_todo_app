@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const AddTodo = ({ addTodo }) => {
   const handleKeyPress = (event) => {
@@ -72,23 +72,72 @@ const TodoItem = ({ todo, markTodoAsDone }) => {
 };
 
 const TodoList = () => {
-  const [todos, setTodos] = useState([
-    { id: crypto.randomUUID(), text: "Learn React", done: false },
-    { id: crypto.randomUUID(), text: "Learn JS", done: true },
-  ]);
-  const [filter, setFilter] = useState("all"); 
+  const [todos, setTodos] = useState([]);
+  const [filter, setFilter] = useState("all");
 
-  const addTodo = (text) => {
-    const newTodo = { id: crypto.randomUUID(), text, done: false };
-    setTodos((prevTodos) => [...prevTodos, newTodo]);
+  useEffect(() => {
+    console.log("useEffect - Carregando tarefas");
+    const fetchTodos = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/todos");
+        if (!response.ok) {
+          throw new Error("Erro ao buscar os dados");
+        }
+        const data = await response.json();
+        setTodos(data);
+      } catch (error) {
+        console.error("Erro ao buscar os dados:", error);
+      }
+    };
+
+    fetchTodos();
+  }, []);
+
+  const addTodo = async (text) => {
+    try {
+      const response = await fetch("http://localhost:3000/todos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text,
+          done: false,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Erro ao adicionar tarefa");
+      }
+      const newTodo = await response.json();
+      setTodos((prevTodos) => [...prevTodos, newTodo]);
+    } catch (error) {
+      console.error("Erro ao adicionar tarefa:", error);
+    }
   };
 
-  const markTodoAsDone = (id) => {
-    setTodos((prevTodos) =>
-      prevTodos.map((todo) =>
-        todo.id === id ? { ...todo, done: true } : todo
-      )
-    );
+  const markTodoAsDone = async (id) => {
+    try {
+      const todoToUpdate = todos.find((todo) => todo.id === id);
+      const response = await fetch(`http://localhost:3000/todos/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...todoToUpdate,
+          done: true,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar tarefa");
+      }
+      const updatedTodo = await response.json();
+      setTodos((prevTodos) =>
+        prevTodos.map((todo) => (todo.id === id ? updatedTodo : todo))
+      );
+    } catch (error) {
+      console.error("Erro ao atualizar tarefa:", error);
+    }
   };
 
   const filteredTodos = todos.filter((todo) => {
