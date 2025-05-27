@@ -1,5 +1,15 @@
 import { useState, useEffect } from "react";
 
+const getAuthToken = () => {
+  return localStorage.getItem("token");
+};
+
+const logout = () => {
+  localStorage.removeItem("token");
+  window.location.href = "/login"; // redireciona manualmente para a página de login
+};
+
+
 const AddTodo = ({ addTodo }) => {
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
@@ -76,10 +86,14 @@ const TodoList = () => {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    console.log("useEffect - Carregando tarefas");
     const fetchTodos = async () => {
       try {
-        const response = await fetch("http://localhost:3000/todos");
+        const response = await fetch("http://localhost:3000/todos", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        });
         if (!response.ok) {
           throw new Error("Erro ao buscar os dados");
         }
@@ -99,6 +113,7 @@ const TodoList = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${getAuthToken()}`,
         },
         body: JSON.stringify({
           text,
@@ -122,6 +137,7 @@ const TodoList = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${getAuthToken()}`,
         },
         body: JSON.stringify({
           ...todoToUpdate,
@@ -148,10 +164,24 @@ const TodoList = () => {
 
   return (
     <>
-      <h1>Todo List</h1>
+        <div className="header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h1>Todo List</h1>
+          <button
+            onClick={logout}
+            style={{
+              padding: "8px 12px",
+              backgroundColor: "#ef4444",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Sair
+          </button>
+      </div>
       <div className="center-content">
-        Versão inicial da aplicação de lista de tarefas para a disciplina
-        SPODWE2
+        Versão inicial da aplicação de lista de tarefas para a disciplina SPODWE2
       </div>
       <TodoFilter currentFilter={filter} setFilter={setFilter} />
       <AddTodo addTodo={addTodo} />
